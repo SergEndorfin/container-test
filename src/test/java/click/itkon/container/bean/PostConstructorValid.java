@@ -1,13 +1,14 @@
 package click.itkon.container.bean;
 
 import click.itkon.container.annotation.Component;
+import click.itkon.container.annotation.PostConstructor;
 
 @Component
-public class PostConstructor {
+public class PostConstructorValid {
 
     private boolean postConstructorCalled = false;
 
-    @click.itkon.container.annotation.PostConstructor
+    @PostConstructor
     public void postConstructor() {
         postConstructorCalled = true;
     }

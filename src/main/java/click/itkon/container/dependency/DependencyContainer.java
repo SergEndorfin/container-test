@@ -6,7 +6,13 @@ import click.itkon.container.annotation.PostConstructor;
 import click.itkon.container.annotation.Qualifier;
 import click.itkon.container.handler.DependencyHandler;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.*;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -26,6 +32,43 @@ public class DependencyContainer {
         this.circularDependencySet = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.preAddHandlers = new ArrayList<>();
         this.postAddHandlers = new ArrayList<>();
+    }
+
+    public void scanAndInitializeContainer(String basePackage) {
+        String path = basePackage.replace('.', '/');
+        ClassLoader classLoader = getClass().getClassLoader();
+        try {
+            Enumeration<URL> resources = classLoader.getResources(path);
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                Path osSpecificResource = Paths.get(resource.toURI());
+                scanPackage(osSpecificResource.toFile(), basePackage);
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void scanPackage(File directory, String packageName) {
+        if (directory.exists()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                Arrays.stream(files).forEach(file -> {
+                    String fileName = file.getName();
+                    if (file.isDirectory()) {
+                        scanPackage(file, packageName + "." + fileName);
+                    } else if (fileName.endsWith(".class")) {
+                        String className = packageName + '.' + fileName.substring(0, fileName.length() - 6);
+                        try {
+                            Class<?> clazz = Class.forName(className);
+                            register(clazz);
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        }
     }
 
     public <T> void register(Class<T> clazz) {

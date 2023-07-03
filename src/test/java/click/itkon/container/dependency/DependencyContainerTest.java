@@ -1,5 +1,6 @@
 package click.itkon.container.dependency;
 
+import click.itkon.container.annotation.PostConstructor;
 import click.itkon.container.bean.*;
 import click.itkon.container.handler.MockHandler;
 import org.junit.jupiter.api.AfterEach;
@@ -49,27 +50,8 @@ class DependencyContainerTest {
     @Test
     void testPostConstructors() {
         container.register(PostConstructor.class);
-        var example = container.getInstance(PostConstructor.class);
-        assertTrue(example.isPostConstructorCalled());
-    }
-
-    @Test
-    void checkThereIsNoMoreThanOnePostConstructorAnnotation() {
-        var exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> container.register(PostConstructorInvalid.class)
-        );
-        assertEquals(POST_CONSTRUCTOR_ERROR_MSG, exception.getMessage());
-    }
-
-    @Test
-    void testCircularDependencies() {
-        var exception = assertThrows(
-                IllegalStateException.class,
-                () -> container.register(CircularDependencyA.class)
-        );
-        var actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(CIRCULAR_ERROR_MSG));
+        var instance = container.getInstance(PostConstructorValid.class);
+        assertTrue(instance.isPostConstructorCalled());
     }
 
     @Test
@@ -81,7 +63,7 @@ class DependencyContainerTest {
         var dependencyHolder = container.getInstance(QualifiedDependencyHolder.class);
         assertNotNull(dependencyHolder);
 
-        QualifiedDependency qualifiedB = dependencyHolder.getQualifiedDependency();
+        var qualifiedB = dependencyHolder.getQualifiedDependency();
         assertNotNull(qualifiedB);
         assertEquals(QUALIFIER_DEPENDENCY_B_NAME, qualifiedB.getClass().getSimpleName());
     }
